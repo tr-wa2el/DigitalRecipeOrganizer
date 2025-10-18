@@ -32,9 +32,9 @@ namespace DigitalRecipeOrganizer.Forms
             txtTitle.Text = _currentRecipe.Title;
             categorySelector.SelectedCategory = Enum.Parse<RecipeCategory>(_currentRecipe.Category);
             txtIngredients.Text = _currentRecipe.Ingredients;
-            
+
             // Handle both RTF and plain text formats
-            if (!string.IsNullOrEmpty(_currentRecipe.Instructions) && 
+            if (!string.IsNullOrEmpty(_currentRecipe.Instructions) &&
                 _currentRecipe.Instructions.StartsWith(@"{\rtf", StringComparison.OrdinalIgnoreCase))
             {
                 rtbInstructions.Rtf = _currentRecipe.Instructions;
@@ -43,13 +43,13 @@ namespace DigitalRecipeOrganizer.Forms
             {
                 rtbInstructions.Text = _currentRecipe.Instructions;
             }
-            
+
             numPrepTime.Value = _currentRecipe.PrepTimeMinutes;
             numCookTime.Value = _currentRecipe.CookTimeMinutes;
             // Ensure servings is at least 1 (the minimum value for the NumericUpDown control)
             numServings.Value = Math.Max(1, _currentRecipe.Servings);
             txtNotes.Text = _currentRecipe.Notes ?? string.Empty;
-            
+
             if (_currentRecipe.ScheduledDate.HasValue)
             {
                 dtpScheduled.Value = _currentRecipe.ScheduledDate.Value;
@@ -93,7 +93,7 @@ namespace DigitalRecipeOrganizer.Forms
 
                 await _dbContext.SaveChangesAsync();
 
-                MessageBox.Show("Recipe saved successfully!", "Success", 
+                MessageBox.Show("Recipe saved successfully!", "Success",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 this.DialogResult = DialogResult.OK;
@@ -101,7 +101,7 @@ namespace DigitalRecipeOrganizer.Forms
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving recipe: {ex.Message}", "Error", 
+                MessageBox.Show($"Error saving recipe: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -110,7 +110,7 @@ namespace DigitalRecipeOrganizer.Forms
         {
             if (string.IsNullOrWhiteSpace(txtTitle.Text))
             {
-                MessageBox.Show("Please enter a recipe title.", "Validation Error", 
+                MessageBox.Show("Please enter a recipe title.", "Validation Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtTitle.Focus();
                 return false;
@@ -118,7 +118,7 @@ namespace DigitalRecipeOrganizer.Forms
 
             if (string.IsNullOrWhiteSpace(txtIngredients.Text))
             {
-                MessageBox.Show("Please enter ingredients.", "Validation Error", 
+                MessageBox.Show("Please enter ingredients.", "Validation Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtIngredients.Focus();
                 return false;
@@ -182,12 +182,12 @@ namespace DigitalRecipeOrganizer.Forms
 
                     File.WriteAllText(sfd.FileName, content);
 
-                    MessageBox.Show("Recipe exported successfully!", "Success", 
+                    MessageBox.Show("Recipe exported successfully!", "Success",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error exporting recipe: {ex.Message}", "Error", 
+                    MessageBox.Show($"Error exporting recipe: {ex.Message}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
@@ -197,6 +197,16 @@ namespace DigitalRecipeOrganizer.Forms
         {
             this.DialogResult = DialogResult.Cancel;
             this.Close();
+        }
+
+        private void dtpScheduled_ValueChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void chkScheduled_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

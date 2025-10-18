@@ -12,6 +12,8 @@ namespace DigitalRecipeOrganizer
     {
         private RecipeDbContext _dbContext;
         private BindingList<Recipe> _recipes;
+        private System.Windows.Forms.Timer? _reminderTimer;
+        private bool _hasShownTodayReminder = false;
 
         public Form1()
         {
@@ -36,6 +38,52 @@ namespace DigitalRecipeOrganizer
             
             LoadRecipes();
             SetupDataGridView();
+            
+            // Initialize reminder system
+            InitializeReminderSystem();
+        }
+
+        /// <summary>
+        /// Initialize the recipe reminder system
+        /// </summary>
+        private void InitializeReminderSystem()
+        {
+            // Show reminders immediately on startup
+            _ = CheckAndShowReminders();
+
+            // Setup timer to check for reminders every hour
+            _reminderTimer = new System.Windows.Forms.Timer();
+            _reminderTimer.Interval = 3600000; // 1 hour = 3600000 milliseconds
+            _reminderTimer.Tick += async (s, e) => await CheckAndShowReminders();
+            _reminderTimer.Start();
+        }
+
+        /// <summary>
+        /// Check for scheduled recipes and show reminders
+        /// </summary>
+        private async Task CheckAndShowReminders()
+        {
+            if (!UserSession.IsLoggedIn)
+                return;
+
+            try
+            {
+                // Get upcoming recipes (next 7 days)
+                var upcomingRecipes = await RecipeReminderService.GetUpcomingRecipesAsync(
+                    _dbContext,
+                    UserSession.CurrentUser!.UserId,
+                    7);
+
+                if (upcomingRecipes.Any() && !_hasShownTodayReminder)
+                {
+                    RecipeReminderService.ShowScheduledRecipesNotification(upcomingRecipes);
+                    _hasShownTodayReminder = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "Reminder check");
+            }
         }
 
         private async void SeedSampleDataIfNeeded()
@@ -395,14 +443,60 @@ namespace DigitalRecipeOrganizer
                 "- Categorize recipes\n" +
                 "- Search by ingredient or category\n" +
                 "- Schedule meal preparation\n" +
+                "- Recipe reminders\n" +
                 "- Export recipes to files",
                 "About",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         }
 
+        /// <summary>
+        /// View scheduled recipes and reminders
+        /// </summary>
+        private async void viewRemindersToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!UserSession.IsLoggedIn)
+                return;
+
+            try
+            {
+                // Get upcoming recipes (next 7 days)
+                var upcomingRecipes = await RecipeReminderService.GetUpcomingRecipesAsync(
+                    _dbContext,
+                    UserSession.CurrentUser!.UserId,
+                    7);
+
+                if (upcomingRecipes.Any())
+                {
+                    RecipeReminderService.ShowScheduledRecipesNotification(upcomingRecipes);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "You have no scheduled recipes for the next 7 days.\n\n" +
+                        "To schedule a recipe, edit it and set a scheduled date!",
+                        "No Scheduled Recipes",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogError(ex, "View Reminders");
+                MessageBox.Show($"Error loading reminders: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            // Stop and dispose the timer
+            if (_reminderTimer != null)
+            {
+                _reminderTimer.Stop();
+                _reminderTimer.Dispose();
+            }
+            
             _dbContext?.Dispose();
             base.OnFormClosing(e);
         }
